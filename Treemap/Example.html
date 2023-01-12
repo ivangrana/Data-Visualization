@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<meta charset="utf-8" />
+
+<!-- Load d3.js -->
+<script src="https://d3js.org/d3.v6.js"></script>
+<title>Visualização PIB</title>
+<div style="color: #83b8ff; text-align: center; font-family: Helvetica; font-size: 30px;">
+  Treemap dos 12 maiores Produtos Internos Brutos do mundo
+</div>
+<!-- Create a div where the graph will take place -->
+<div id="my_dataviz"></div>
+
+<script>
+  // set the dimensions and margins of the graph
+  const margin = { top: 10, right: 10, bottom: 10, left: 10 },
+    width = 945 - margin.left - margin.right,
+    height = 545 - margin.top - margin.bottom;
+
+  // append the svg object to the body of the page
+  const svg = d3
+    .select("#my_dataviz")
+    .append("svg")
+    .attr("width", width + margin.left + margin.right)
+    .attr("height", height + margin.top + margin.bottom)
+    .append("g")
+    .attr("transform", `translate(${margin.left}, ${margin.top})`);
+
+  // Read data
+  d3.csv(
+    "https://raw.githubusercontent.com/ivangrana/Data-Visualization/main/data_test.csv"
+  ).then(function (data) {
+    // stratify the data: reformatting for d3.js
+    const root = d3
+      .stratify()
+      .id(function (d) {
+        return d.name;
+      }) // Name of the entity (column name is name in csv)
+      .parentId(function (d) {
+        return d.parent;
+      })(
+      // Name of the parent (column name is parent in csv)
+      data
+    );
+    root.sum(function (d) {
+      return +d.value;
+    }); // Compute the numeric value for each entity
+
+    // Then d3.treemap computes the position of each element of the hierarchy
+    // The coordinates are added to the root object above
+    d3.treemap().size([width, height]).padding(4)(root);
+
+    // use this information to add rectangles:
+    svg
+      .selectAll("rect")
+      .data(root.leaves())
+      .join("rect")
+      .attr("x", function (d) {
+        return d.x0;
+      })
+      .attr("y", function (d) {
+        return d.y0;
+      })
+      .attr("width", function (d) {
+        return d.x1 - d.x0;
+      })
+      .attr("height", function (d) {
+        return d.y1 - d.y0;
+      })
+      .style("stroke", "#83b8ff")
+      .style("stroke-width", "3px")
+      .style("fill", "#0f6bae");
+
+    // and to add the text labels
+    svg
+      .selectAll("text")
+      .data(root.leaves())
+      .join("text")
+      .attr("x", function (d) {
+        return d.x0 + 10;
+      }) // +10 to adjust position (more right)
+      .attr("y", function (d) {
+        return d.y0 + 20;
+      }) // +20 to adjust position (lower)
+      .text(function (d) {
+        return d.data.name;
+      })
+      .attr("font-size", "20px")
+      .attr("fill", "white")
+      .attr("font-family", "system-ui")
+      .attr("color", "#c6cdff");
+
+  });
+</script>
+
+<style>
+  * {
+    background-color: #858585;
+    
+  }
+</style>
